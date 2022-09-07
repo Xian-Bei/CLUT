@@ -22,37 +22,23 @@ class CLUTNet(nn.Module):
                 nn.Dropout(p=0.2, inplace=True),
                 nn.Conv2d(128, int(nsw[:2]),1,1),
             )
-        
-        num = int(nsw[:2])
-        if len(nsw)==2:
-            s = -1
-            w = -1
-        else:
-            s = int(nsw[2:4])
-            w = int(nsw[4:])
-        self.CLUTs = CLUT(int(nsw[:2]),dim,s,w)
+        nsw = nsw.split("+")
+        num, s, w = int(nsw[0]), int(nsw[1]), int(nsw[2])
+        self.CLUTs = CLUT(num,dim,s,w)
         self.TrilinearInterpolation = TrilinearInterpolation()
 
 
     def forward(self, img, img_org, TVMN=None, *args, **kwargs):
-        pre = time.time()
         feature = self.backbone(self.pre(img))
-        stage1 = (time.time() - pre)*1000
 
-        pre = time.time()
         weight = self.classifier(feature)[:,:,0,0] # n, num
-        LUT, tvmn = self.CLUTs(weight, TVMN)
-        stage2 = (time.time() - pre)*1000
+        D3LUT, tvmn = self.CLUTs(weight, TVMN)
 
-        pre = time.time()
-        # pdb.set_trace()
-        img_res = self.TrilinearInterpolation(LUT, img_org)
-        stage3 = (time.time() - pre)*1000
+        img_res = self.TrilinearInterpolation(D3LUT, img_org)
 
         return img_res + img_org , {
-            "LUT": LUT,
+            "LUT": D3LUT,
             "tvmn": tvmn,
-            "time_cost": [stage1,stage2,stage3]
         }
 
 
@@ -105,22 +91,13 @@ class CLUT(nn.Module):
         dim = self.dim
         num = self.num
 
-        # if TVMN is None and self.mode == "++":
-        # if False:
-        #     tvmn = 0 
-
-        #     clut = (weight.reshape(1,-1,1)*self.LUTs.reshape(self.s,self.num,3*self.w)).sum(1).reshape(self.s*3,self.w) # s,3*w
-        #     cube = self.s_Layers.mm(clut.mm(self.w_Layers).reshape(-1,3*dim*dim)).reshape(dim,3,dim**2).permute(1,0,2).reshape(1,3,self.dim,self.dim,self.dim)
-        #     d3lut = cube
-        #     # d3lut = cube_to_lut(cube)
-        # else:
         D3LUTs = self.reconstruct_luts()
         if TVMN is None:
             tvmn = 0
         else:
             tvmn = TVMN(D3LUTs)
-        d3lut = weight.mm(D3LUTs.reshape(num,-1)).reshape(-1,3,dim,dim,dim)
-        return d3lut, tvmn
+        D3LUT = weight.mm(D3LUTs.reshape(num,-1)).reshape(-1,3,dim,dim,dim)
+        return D3LUT, tvmn
 
     def forward(self, weight, TVMN=None):
         lut, tvmn = self.combine(weight, TVMN)
@@ -144,8 +121,8 @@ class BackBone(nn.Module):
         return self.model(x)
 
 
-class TVMN(nn.Module): # (n,)3,d,d,d     (n,)3,d
-    def __init__(self, dim=33, mode='new'):
+class TVMN(nn.Module): # (n,)3,d,d,d   or   (n,)3,d
+    def __init__(self, dim=33):
         super(TVMN,self).__init__()
         self.dim = dim
         self.relu = torch.nn.ReLU()
@@ -161,53 +138,22 @@ class TVMN(nn.Module): # (n,)3,d,d,d     (n,)3,d
         self.register_buffer('weight_b', weight_b, persistent=False)
 
         self.register_buffer('tvmn_shape', torch.empty(3), persistent=False)
-        self.mode = mode
-        if mode =="old":
-            print("old tvmn")
-        elif mode == "new":
-            print("new tvmn")
 
 
     def forward(self, LUT): 
         dim = self.dim
         tvmn = 0 + self.tvmn_shape
         if len(LUT.shape) > 3: # n,3,d,d,d  or  3,d,d,d
-            if self.mode == 'old':
-                '''old wrong
-                # 以r为例，任何两个格子，当只有r坐标不同，其他（b和g）坐标都相同时，这两个格子的rgb三个值都要光滑和非减
-                '''
-                dif_r = LUT[...,:-1] - LUT[...,1:]
-                dif_g = LUT[...,:-1,:] - LUT[...,1:,:]
-                dif_b = LUT[...,:-1,:,:] - LUT[...,1:,:,:]
-                tvmn[0] =   torch.mean(dif_r**2 * self.weight_r[:,0]) + \
-                            torch.mean(dif_g**2 * self.weight_g[:,0]) + \
-                            torch.mean(dif_b**2 * self.weight_b[:,0])
-                tvmn[1] =   torch.mean(self.relu(dif_r * self.weight_r[:,0])**2) + \
-                            torch.mean(self.relu(dif_g * self.weight_g[:,0])**2) + \
-                            torch.mean(self.relu(dif_b * self.weight_b[:,0])**2)
-                tvmn[2] = 0
-            elif self.mode == 'new':
-                # 以r为例，任何两个格子，当只有r坐标不同，其他（b和g）坐标都相同时，这两个格子的r值都要光滑和单调, g和b不一定要单调，只要光滑就行
-                # 例如 (2,x,x) -> (4,x,x); (3,x,x) -> (3,x,x)   not ok
-                # (2,x,x) -> (4,x,x); (3,x,x) -> (5,x-1,x-1)  ok
-                dif_r = LUT[...,0,:,:,:-1] - LUT[...,0,:,:,1:] # (n,)d,d ,d-1
-                dif_g = LUT[...,1,:,:-1,:] - LUT[...,1,:,1:,:]
-                dif_b = LUT[...,2,:-1,:,:] - LUT[...,2,1:,:,:]
-                tvmn[0] =   torch.mean(dif_r**2 * self.weight_r[:,0]) + \
-                            torch.mean(dif_g**2 * self.weight_g[:,0]) + \
-                            torch.mean(dif_b**2 * self.weight_b[:,0])
-                tvmn[1] =   torch.mean(self.relu(dif_r * self.weight_r[:,0])**2) + \
-                            torch.mean(self.relu(dif_g * self.weight_g[:,0])**2) + \
-                            torch.mean(self.relu(dif_b * self.weight_b[:,0])**2)
-
-                dif_r = LUT[...,(1,2),:,:,:-1] - LUT[...,(1,2),:,:,1:] # (n,)d,d,d-1
-                dif_g = LUT[...,(0,2),:,:-1,:] - LUT[...,(0,2),:,1:,:]
-                dif_b = LUT[...,(0,1),:-1,:,:] - LUT[...,(0,1),1:,:,:]
-                tvmn[2] =   torch.mean(self.relu(dif_r * self.weight_r)**2) + \
-                            torch.mean(self.relu(dif_g * self.weight_g)**2) + \
-                            torch.mean(self.relu(dif_b * self.weight_b)**2)
-            else:
-                raise
+            dif_r = LUT[...,:-1] - LUT[...,1:]
+            dif_g = LUT[...,:-1,:] - LUT[...,1:,:]
+            dif_b = LUT[...,:-1,:,:] - LUT[...,1:,:,:]
+            tvmn[0] =   torch.mean(dif_r**2 * self.weight_r[:,0]) + \
+                        torch.mean(dif_g**2 * self.weight_g[:,0]) + \
+                        torch.mean(dif_b**2 * self.weight_b[:,0])
+            tvmn[1] =   torch.mean(self.relu(dif_r * self.weight_r[:,0])**2) + \
+                        torch.mean(self.relu(dif_g * self.weight_g[:,0])**2) + \
+                        torch.mean(self.relu(dif_b * self.weight_b[:,0])**2)
+            tvmn[2] = 0
         else: # n,3,d  or  3,d
             dif = LUT[...,:-1] - LUT[...,1:]
             tvmn[1] = torch.mean(self.relu(dif))
@@ -215,8 +161,6 @@ class TVMN(nn.Module): # (n,)3,d,d,d     (n,)3,d
             dif[...,(0,dim-2)] *= 2.0
             tvmn[0] = torch.mean(dif)
             tvmn[2] = 0
-            # tv2, mn2 = self.forward(from_3d1(LUT))
-            # pdb.set_trace()
         return tvmn
 
 

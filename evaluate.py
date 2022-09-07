@@ -26,7 +26,6 @@ def evaluate(setting, epoch=None, best_psnr=None, do_save_img=True):
     psnr_ls = []
     weight_ls = []
     psnr_in, psnr_out, avg_psnr_in, avg_psnr_out = 0, 0, 0, 0
-    time_cost = [0, 0, 0]
     with torch.no_grad():
         for i, batch in enumerate(eval_dataloader):
             targets = batch["target_org"].type(Tensor)
@@ -35,13 +34,9 @@ def evaluate(setting, epoch=None, best_psnr=None, do_save_img=True):
             if psnr_in is not None:
                 psnr_in = psnr_in.squeeze()
             fakes, others = setting.evaluate(batch)
-            for j, cost in enumerate(others['time_cost']):
-                time_cost[j] += cost
             name = os.path.splitext(batch["name"][0])[0]
             if epoch is None:
-                # sys.stdout.write("\r"+name+" "+" ".join([str(it) for it in others['time_cost']]))
                 sys.stdout.write("\r"+name)
-                # print(name)
             ########################################## log
             psnr_out = psnr(fakes, targets).item()
             if psnr_in is None:
@@ -50,7 +45,8 @@ def evaluate(setting, epoch=None, best_psnr=None, do_save_img=True):
             avg_psnr_in += psnr_in
             avg_psnr_out += psnr_out
             img_ls = [imgs.squeeze().data, fakes.squeeze().data, targets.squeeze().data]
-            # save_image(img_ls, join(dst, "%s %s.jpg" % (name, change_str)), nrow=len(img_ls))
+            if do_save_img:
+                save_image(img_ls, join(dst, "%s %s.jpg" % (name, change_str)), nrow=len(img_ls))
 
     isbest = ""
     avg_psnr_in /= len(eval_dataloader)
@@ -60,13 +56,9 @@ def evaluate(setting, epoch=None, best_psnr=None, do_save_img=True):
             isbest = "_best"
     change_str = "_%.4f--%.4f" % (avg_psnr_in, avg_psnr_out)
     os.rename(dst, dst + change_str + isbest) 
-    # torch.cuda.empty_cache()
-    for i in range(len(time_cost)):
-        time_cost[i] /= len(eval_dataloader)
-    # for i in range(len(time_cost)):
-    #     time_cost[i] /= time_cost[-1]
+    torch.cuda.empty_cache()
 
-    return avg_psnr_out, time_cost
+    return avg_psnr_out
 
 if __name__ == "__main__":
     opt = parser.parse_args()

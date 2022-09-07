@@ -71,3 +71,4 @@ class FiveK(Dataset):
     def __len__(self):
         return len(self.input_files)
 
+# Implement your own DatasetClass according to your data format and dir arrangement.

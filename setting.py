@@ -13,7 +13,6 @@ class Setting():
 
         self.opt = opt
         opt.losses = opt.losses.split(" ")
-        opt.start_eval_epoch = 1
 
         self.model = CLUTNet(opt.model, dim=opt.dim)
         self.model = self.model.to(device)
@@ -28,10 +27,9 @@ class Setting():
 
         if mode == "train": # python train.py
             os.makedirs(opt.save_models_root, exist_ok=True)
-            opt.save_logs_root = join(opt.save_root, "logs", opt.dataset) 
-            os.makedirs(opt.save_logs_root, exist_ok=True)
             opt.save_images_root = join(opt.save_root, opt.output_dir +"_"+ "images")
             os.makedirs(opt.save_images_root, exist_ok=True)
+            opt.save_logs_root = join(opt.save_root, opt.output_dir)
             self.optimizer = torch.optim.Adam(
                 filter(lambda p: p.requires_grad, self.model.parameters()),
                 lr=opt.lr,
@@ -59,13 +57,12 @@ class Setting():
                 self.model.load_state_dict(load, strict=True)
                 print("model loaded from epoch "+str(opt.epoch))
         
-        self.TVMN = TVMN(opt.dim, mode="old").to(device)
+        self.TVMN = TVMN(opt.dim).to(device)
         os.makedirs(opt.save_images_root, exist_ok=True)
         
              
     def train(self, batch):
         self.model.train()
-        self.model.my_train()
         imgs = batch["input"].type(Tensor)
         experts = batch["target"].type(Tensor)
         # flops, params = profile(self.model, inputs = (imgs, imgs, self.TVMN))

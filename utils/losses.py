@@ -21,6 +21,6 @@ def psnr(fake, expert):
         max_ = 1.
     return 10 * torch.log10(max_**2 / (mse)) 
 
-def cosine(fake, expert, weight=1): # 余弦距离 -1~0~1，对应角度180~90~0，我们希望余弦距离越小越好，so 1-
+def cosine(fake, expert, weight=1):
     return (1 - torch.nn.functional.cosine_similarity(fake, expert, 1)).mean()*weight
 
