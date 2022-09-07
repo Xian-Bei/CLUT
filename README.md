@@ -1,8 +1,7 @@
-# Core codes for CLUT-Net
+# Core codes for CLUT-Net and tools for 3DLUT
 CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement
 
 *ACMMM2022* 
-
 ## Preparation
 ### Enviroment
     pip install -r requirements.txt
@@ -25,7 +24,11 @@ To get started as soon as possible, only the 'data_root' needs to be modified be
 By default, the images, models, and logs generated during training will be saved in the parent dir of the current one (controlled by 'save root').
 ### Testing
     python evaluate.py --epoch <xx>
+To evaluate the trained model of a specific epoch, keep the other parameters the same as training.
 
+# Acknowledgement
+Our work is built on the excellent work of Zeng *et al*.
 
+[Learning Image-adaptive 3D Lookup Tables for High Performance Photo Enhancement in Real-time *TPAMI2020*](https://github.com/HuiZeng/Image-Adaptive-3DLUT)
 
     
