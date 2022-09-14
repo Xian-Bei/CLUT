@@ -19,13 +19,16 @@ All three modules are jointly learned from the annotated data in an end-to-end m
 ### Enviroment
     pip install -r requirements.txt
 
-The fast deployment of 3DLUT relies on the CUDA implementation of [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT).
+The fast deployment of 3DLUT relies on the CUDA implementation of trilinear interpolation in [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT).
 
-Please refer to their main page for the installation of the **trilinear** library. 
+To install their **trilinear** library: 
+
+    cd trilinear_cpp
+    sh setup.sh
+
 ### Data
 - [MIT-Adobe FiveK Dataset](https://data.csail.mit.edu/graphics/fivek/) & [HDR+ Burst Photography Dataset](http://www.hdrplusdata.org/)
-
-    - For the utilized FiveK and HDR+ dataset, please refer to https://github.com/HuiZeng/Image-Adaptive-3DLUT.
+    - We use the setting of [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT) in our experiments, please refer to their page for details and data link.
 - [PPR10K](https://github.com/csjliang/PPR10K)
 
 Prepare the dataset in the following format and you could use the provided [FiveK Dataset class](/datasets.py).
