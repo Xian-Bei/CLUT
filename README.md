@@ -1,9 +1,20 @@
 # Core codes for CLUT-Net and tools for 3DLUT
-[**CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement**](https://cslinzhang.gitee.io/home/ACMMM2022/fengyi.pdf)
+[**CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement**](/demo_images/MM2022%20CLUT-Net.pdf)
 
 Fengyi Zhang, [Hui Zeng](https://huizeng.github.io/), [Tianjun Zhang](https://github.com/z619850002), [Lin Zhang](https://cslinzhang.gitee.io/home/)
 
 *ACMMM2022* 
+
+## Overview
+![](/demo_images/overview.png)
+Framework of our proposed CLUT-Net which consists of 
+- a neural network
+- 𝑁 basis CLUTs
+- two transformation matrices
+
+The 𝑁 basis CLUTs cover various enhancement effects required in different scenes. The neural network predicts content-dependent weights according to the downsampled input to fuse the basis CLUTs into an image-adaptive one, from which the transformation matrices adaptively reconstruct the corresponding standard 3DLUT to enhance the original input image. 
+
+All three modules are jointly learned from the annotated data in an end-to-end manner.
 ## Preparation
 ### Enviroment
     pip install -r requirements.txt
@@ -27,7 +38,7 @@ Or you need to implement your own Class for your customed data format / director
 The default settings of the most hyper-parameters are written in the [parameter.py](parameter.py) file.
 To get started as soon as possible (with the FiveK dataset), only the 'data_root' needs to be modified before training.
 
-    python train.py --data_root <xx>
+    python train.py --data_root <path>
 
 By default, the images, models, and logs generated during training are saved in [save_root/dataset/name](/FiveK/20%2B05%2B10_models/).
 ## Evaluation
