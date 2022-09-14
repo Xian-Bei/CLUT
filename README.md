@@ -9,15 +9,19 @@ Fengyi Zhang, [Hui Zeng](https://huizeng.github.io/), [Tianjun Zhang](https://gi
 ![](/demo_images/overview.png)
 Framework of our proposed CLUT-Net which consists of 
 - a neural network
-- 𝑁 basis CLUTs
+- *N* basis CLUTs
 - two transformation matrices
 
-The 𝑁 basis CLUTs cover various enhancement effects required in different scenes. The neural network predicts content-dependent weights according to the downsampled input to fuse the basis CLUTs into an image-adaptive one, from which the transformation matrices adaptively reconstruct the corresponding standard 3DLUT to enhance the original input image. 
+The *N* basis CLUTs cover various enhancement effects required in different scenes. The neural network predicts content-dependent weights according to the downsampled input to fuse the basis CLUTs into an image-adaptive one, from which the transformation matrices adaptively reconstruct the corresponding standard 3DLUT to enhance the original input image. 
 
 All three modules are jointly learned from the annotated data in an end-to-end manner.
 ## Preparation
 ### Enviroment
     pip install -r requirements.txt
+
+The fast deployment of 3DLUT relies on the CUDA implementation of [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT).
+
+Please refer to their main page for the installation of the **trilinear** library. 
 ### Data
 - [MIT-Adobe FiveK Dataset](https://data.csail.mit.edu/graphics/fivek/) & [HDR+ Burst Photography Dataset](http://www.hdrplusdata.org/)
 
