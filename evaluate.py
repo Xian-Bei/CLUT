@@ -47,7 +47,6 @@ def evaluate(setting, epoch=None, best_psnr=None, do_save_img=True):
             img_ls = [imgs.squeeze().data, fakes.squeeze().data, targets.squeeze().data]
             if do_save_img:
                 save_image(img_ls, join(dst, "%s %s.jpg" % (name, change_str)), nrow=len(img_ls))
-
     isbest = ""
     avg_psnr_in /= len(eval_dataloader)
     avg_psnr_out /= len(eval_dataloader)
@@ -63,4 +62,4 @@ def evaluate(setting, epoch=None, best_psnr=None, do_save_img=True):
 if __name__ == "__main__":
     opt = parser.parse_args()
     setting = Setting(opt, "test")
-    print(evaluate(setting))
+    print("\n{:.4f}".format(evaluate(setting)))

@@ -18,12 +18,13 @@ parser.add_argument("--lambda_mn", type=float, default=10.0, help="monotonicity 
 # epoch for eval:   load the model of <epoch> and evaluate
 parser.add_argument("--epoch", type=int, default=1)
 
-parser.add_argument("--n_epochs", type=int, default=370, help="last epoch of training (include)")
+parser.add_argument("--n_epochs", type=int, default=380, help="last epoch of training (include)")
 parser.add_argument("--dim", type=int, default=33, help="dimension of 3DLUT")
 parser.add_argument("--losses", type=str, default="1*l1 1*cosine", help="one or more loss functions (splited by space)")
 parser.add_argument("--model", type=str, default="20+05+20", help="model configuration, n+s+w")
+parser.add_argument("--name", type=str, help="name for this training (if None, use <model> instead)")
 
-parser.add_argument("--save_root", type=str, default="../", help="root path to save images/models/logs")
+parser.add_argument("--save_root", type=str, default=".", help="root path to save images/models/logs")
 parser.add_argument("--checkpoint_interval", type=int, default=1)
 parser.add_argument("--data_root", type=str, default="/data", help="root path of data")
 

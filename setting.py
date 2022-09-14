@@ -16,8 +16,13 @@ class Setting():
 
         self.model = CLUTNet(opt.model, dim=opt.dim)
         self.model = self.model.to(device)
-        opt.output_dir = join(opt.dataset, opt.model)
-        opt.save_models_root = join(opt.save_root, opt.output_dir +"_"+ "models")
+        if opt.name is None:
+            opt.output_dir = join(opt.save_root, opt.dataset, opt.model)
+        else:
+            opt.output_dir = join(opt.save_root, opt.dataset, opt.name)
+        print("save checkpoints to %s" % opt.output_dir)
+
+        opt.save_models_root = opt.output_dir + "_models"
         self.eval_dataloader = DataLoader(
             eval(opt.dataset)(opt.data_root, mode="test"),
             batch_size=1,
@@ -27,9 +32,9 @@ class Setting():
 
         if mode == "train": # python train.py
             os.makedirs(opt.save_models_root, exist_ok=True)
-            opt.save_images_root = join(opt.save_root, opt.output_dir +"_"+ "images")
+            opt.save_images_root = opt.output_dir +"_images"
             os.makedirs(opt.save_images_root, exist_ok=True)
-            opt.save_logs_root = join(opt.save_root, opt.output_dir)
+            opt.save_logs_root = opt.output_dir
             self.optimizer = torch.optim.Adam(
                 filter(lambda p: p.requires_grad, self.model.parameters()),
                 lr=opt.lr,
@@ -51,7 +56,7 @@ class Setting():
                     print("ckp loaded from the latest epoch")
         else: # python eval.py
             self.epoch = opt.epoch
-            opt.save_images_root = join(opt.save_root, opt.output_dir +"_"+ str(self.epoch))
+            opt.save_images_root = opt.output_dir +"_"+ str(self.epoch)
             if opt.epoch > 1:
                 load = torch.load(join(opt.save_models_root, "model{:0>4}.pth".format(opt.epoch)))
                 self.model.load_state_dict(load, strict=True)
