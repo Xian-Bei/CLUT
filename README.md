@@ -80,10 +80,15 @@ To evaluate your trained model of a specific epoch, remember to keep the other p
 ![](demo_images/3D_2.png)
 
 All the visualization codes could be found in [utils/](./utils/).
-# Acknowledgement
-Our work is built on the excellent work and implementation of Zeng *et al*.
 
-[Learning Image-adaptive 3D Lookup Tables for High Performance Photo Enhancement in Real-time](https://github.com/HuiZeng/Image-Adaptive-3DLUT)
-*TPAMI2020*
+# Acknowledgemen
+Thanks to Zeng *et al* for their excellent work.
+This repo is built on their implementation:
+[Learning Image-adaptive 3D Lookup Tables for High Performance Photo Enhancement in Real-time *TPAMI2020*](https://github.com/HuiZeng/Image-Adaptive-3DLUT)
+
+Hope our work helps.
+
+
+
 
     
