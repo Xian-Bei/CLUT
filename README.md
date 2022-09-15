@@ -49,11 +49,17 @@ To get started as soon as possible (with the FiveK dataset), only the 'data_root
 
 By default, the images, models, and logs generated during training are saved in [save_root/dataset/name](/FiveK/20%2B05%2B10_models/).
 ## Evaluation
-We provide a pretrained model with 25.56 PSNR on the FiveK datset. 
+We provide two pretrained models on the FiveK datset:
+    
+  - 20+05+10: 25.56 PSNR
+  - 20+05+20: 25.58 PSNR 
 
 Just
     
-    python evaluate.py --model 20+05+10 --epoch 310
+    python evaluate.py --model 20+05+10 --epoch 305
+or
+
+    python evaluate.py --model 20+05+20 --epoch 310
 
 To evaluate your trained model of a specific epoch, remember to keep the other parameters the same as training.
 
