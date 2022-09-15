@@ -20,7 +20,7 @@ plt.rcParams['ps.fonttype'] = 42
 channel_ls = ['r', 'g', 'b']
 
 
-def draw_matrix_weak(matrix_weak, title=None, point_size=50, save_dir=None): # (n,)1,d,d  or  (n,)3,d,d
+def draw_matrix_weak(matrix_weak, title=None, point_size=50, save_dir=None): # matrix_weak： (n,)1,d,d  or  (n,)3,d,d
     fullscreen()
     dim = matrix_weak.shape[-1]
     matrix_weak *= dim
@@ -75,8 +75,7 @@ def fullscreen():
     # manager = plt.get_current_fig_manager()
     # manager.frame.Maximize(True)
 
-#  n,3,d,d,d,
-def draw_strong(luts, title=None, save_dir=None, time=1):
+def draw_strong(luts, title=None, save_dir=None, time=1): # luts: (n,3,d,d,d)
 
     #n,1,dim
     def draw_curve(curves, ax, color='b'):
@@ -123,7 +122,7 @@ def draw_strong(luts, title=None, save_dir=None, time=1):
         plt.show()
 
 
-def draw_weak(luts, title=None, time=2, point_size=40, save_dir=None): # n,3,d,d,d
+def draw_weak(luts, title=None, time=2, point_size=40, save_dir=None): # luts: (n,3,d,d,d)
 
     import matplotlib.patches as mpatches
     import matplotlib.transforms as mtransforms
@@ -211,7 +210,8 @@ def draw_weak(luts, title=None, time=2, point_size=40, save_dir=None): # n,3,d,d
     else:
         plt.show()  
 
-def draw_3D(lut, title=None, point_size=30, time=2): # 1,ddd  OR  3,ddd
+# Please see show3D.ipynb for faster 3D visualization
+def draw_3D(lut, title=None, point_size=30, time=2): # lut: (1,d,d,d)  OR  (3,d,d,d)
     fullscreen()
     if len(lut.shape) == 5:
         lut = lut.squeeze()
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     luts = cube_to_lut(model['CLUTs.LUTs'].reshape(-1,3,33,33,33))
     draw_strong(luts+identity3d_tensor(33).unsqueeze(0), save_dir=None) 
     draw_weak(luts+identity3d_tensor(33).unsqueeze(0), save_dir=None)
-    draw_3D(luts[0]+identity3d_tensor(33))
+    # draw_3D(luts[0]+identity3d_tensor(33))
 
 
     root = "/mnt/tvmn1/input/"
