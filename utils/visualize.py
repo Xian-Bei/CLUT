@@ -29,12 +29,12 @@ def draw_matrix_weak(matrix_weak, title=None, point_size=50, save_dir=None): # (
     if len(matrix_weak.shape) == 3:
         matrix_weak = np.expand_dims(matrix_weak, 0)
     n = matrix_weak.shape[0]
-    n = 10 # 展示几个
-    col = 5 # 分几列展示
+    n = 10 # how many lut to view
+    col = 5 # how many columns to view
     row = int(n/col)
     plt.subplots_adjust(wspace=0.,hspace=0)
     for i in range(n):
-        ax = plt.subplot(row,col,i+1, projection='3d')  # 创建一个三维的绘图工程
+        ax = plt.subplot(row,col,i+1, projection='3d')
         ax.set_title(title)
         ax.set_zlim(0,dim) 
         ax.set_xticks([]) 
@@ -42,7 +42,7 @@ def draw_matrix_weak(matrix_weak, title=None, point_size=50, save_dir=None): # (
         ax.set_zticks([]) 
         # ax.set_xlabel('R')
         # ax.set_ylabel('G')
-        # ax.set_zlabel("B")  # 坐标轴
+        # ax.set_zlabel("B")
         for c in range(matrix_weak.shape[1]):
             ax.scatter(x,y,matrix_weak[i,c],c=matrix_weak[i,c],s=point_size)
     
@@ -76,7 +76,7 @@ def fullscreen():
     # manager.frame.Maximize(True)
 
 #  n,3,d,d,d,
-def draw_strong(luts, title=None, save_dir=None, time=0.1):
+def draw_strong(luts, title=None, save_dir=None, time=1):
 
     #n,1,dim
     def draw_curve(curves, ax, color='b'):
@@ -94,15 +94,13 @@ def draw_strong(luts, title=None, save_dir=None, time=0.1):
         n = luts.shape[0]
     step = 15
     dim = luts[0].shape[2]
-    idt = identity3d_tensor(dim).numpy()
 
-    n = 5 # 只展示五个
-    fig, axes = plt.subplots(3, n ,sharex="col", sharey="row")  # 创建一个三维的绘图工程
+    n = min(n, 5) # how many to visualize 
+    fig, axes = plt.subplots(3, n ,sharex="col", sharey="row")
     plt.subplots_adjust(hspace=0.3)
     fullscreen()
     for lut_idx in range(n):
         lut = luts[lut_idx]
-        lut += idt
         lut *= dim
         cube = lut_to_cube(lut) # 3,ddd
         cube = cube.permute(2,3,0,1).reshape(-1,3,dim).detach().cpu().numpy()
@@ -133,10 +131,6 @@ def draw_weak(luts, title=None, time=2, point_size=40, save_dir=None): # n,3,d,d
     import matplotlib.cm as cm
     import matplotlib.colors as mcolors
     def add_top_cax(ax_ls, pad, width):
-        '''
-        在一个ax右边追加与之等高的cax.
-        pad是cax与ax的间距,width是cax的宽度.
-        '''
         cax_ls = []
         for ax in ax_ls:
             axpos = ax.get_position()
@@ -160,12 +154,13 @@ def draw_weak(luts, title=None, time=2, point_size=40, save_dir=None): # n,3,d,d
         n = len(luts)
     else:
         n = luts.shape[0]
-    col = 5 # 只展示五个
+    col = 5
     if n > col:
         n = col
+    else:
+        col = n
     step = 15
     dim = luts[0].shape[2]
-    idt = identity3d_tensor(dim).numpy()
 
     x, y = np.arange(0,dim), np.arange(0,dim)
     x, y = np.meshgrid(x, y)
@@ -173,20 +168,19 @@ def draw_weak(luts, title=None, time=2, point_size=40, save_dir=None): # n,3,d,d
     for lut_idx in range(n):
         
         lut = luts[lut_idx]
-        lut += idt
         lut *= dim
         cube = lut_to_cube(lut)
         
         for dim_idx in range(0,dim,step):
             for channel_idx in range(len(channel_ls)):
-                ax = plt.subplot(3,n,(channel_idx)*col+lut_idx+1,projection='3d')  # 创建一个三维的绘图工程
+                ax = plt.subplot(3,n,(channel_idx)*col+lut_idx+1,projection='3d')
                 title = "$\phi_{%d}^{%c}$"%(lut_idx+1, channel_ls[channel_idx])
                 ax.set_title(title, y=0.99, fontsize="xx-large")
                 # ax.set_zlim(0,dim)
                 if lut_idx == n-1:
                     ax.set_zticks(range(0,dim,step))
                     if channel_idx == 1:
-                        ax.set_zlabel("$c_{out}$",labelpad=6,fontsize="xx-large")  # 坐标轴
+                        ax.set_zlabel("$c_{out}$",labelpad=6,fontsize="xx-large")
                 else:
                     ax.set_zticks([])
                 if channel_idx == 2:
@@ -217,7 +211,7 @@ def draw_weak(luts, title=None, time=2, point_size=40, save_dir=None): # n,3,d,d
     else:
         plt.show()  
 
-def draw_3D(lut, title=None, point_size=30, time=0.2): # 1,ddd  OR  3,ddd
+def draw_3D(lut, title=None, point_size=30, time=2): # 1,ddd  OR  3,ddd
     fullscreen()
     if len(lut.shape) == 5:
         lut = lut.squeeze()
@@ -236,8 +230,8 @@ def draw_3D(lut, title=None, point_size=30, time=0.2): # 1,ddd  OR  3,ddd
 
     ax.set_xlabel('G')
     ax.set_ylabel('B')
-    ax.set_zlabel("R")  # 坐标轴
-    ax.scatter(x, y, z, c=lut, s=point_size)  # 绘制数据点
+    ax.set_zlabel("R")
+    ax.scatter(x, y, z, c=lut, s=point_size)
     plt.show()
 
 
@@ -247,17 +241,15 @@ if __name__ == "__main__":
     name = "Test+20-1-1_models/"
     epoch = 181
     model = torch.load(os.path.join(root, name, "model{:0>4}.pth".format(epoch)),map_location=torch.device('cpu'))
-    luts = cube_to_lut(model['LUT_model.LUTs'].reshape(-1,3,33,33,33))
-    draw_strong(luts, save_dir=None) 
-    draw_weak(luts, time=0.01, save_dir=None)
+    luts = cube_to_lut(model['CLUTs.LUTs'].reshape(-1,3,33,33,33))
+    draw_strong(luts+identity3d_tensor(33).unsqueeze(0), save_dir=None) 
+    draw_weak(luts+identity3d_tensor(33).unsqueeze(0), save_dir=None)
     draw_3D(luts[0]+identity3d_tensor(33))
-
-
 
 
     root = "/mnt/tvmn1/input/"
     name = "Test+20-120_models"
     epoch = 354
     model = torch.load(os.path.join(root, name, "model{:0>4}.pth".format(epoch)),map_location=torch.device('cpu'))
-    matrix_weak = model['LUT_model.inter_Layers'].numpy().reshape(-1,1,33,33)
+    matrix_weak = model['CLUTs.w_Layers'].numpy().reshape(-1,1,33,33)
     draw_matrix_weak(matrix_weak)
