@@ -47,12 +47,12 @@ To get started as soon as possible (with the FiveK dataset), only the 'data_root
 
     python train.py --data_root <path>
 
-By default, the images, models, and logs generated during training are saved in [save_root/dataset/name](/FiveK/20%2B05%2B10_models/).
+By default, the images, models, and logs generated during training are saved in [save_root/dataset/name](/FiveK/).
 ## Evaluation
 We provide two pretrained models on the FiveK datset:
     
-  - 20+05+10: 25.56 PSNR
-  - 20+05+20: 25.68 PSNR 
+  - [20+05+10: 25.56 PSNR](/FiveK/20+05+10_models/)
+  - [20+05+20: 25.68 PSNR](/FiveK/20+05+20_models/)
 
 To evaluate them, just
     
