@@ -52,14 +52,14 @@ By default, the images, models, and logs generated during training are saved in 
 We provide two pretrained models on the FiveK datset:
     
   - 20+05+10: 25.56 PSNR
-  - 20+05+20: 25.58 PSNR 
+  - 20+05+20: 25.68 PSNR 
 
 Just
     
-    python evaluate.py --model 20+05+10 --epoch 305
+    python evaluate.py --model 20+05+10 --epoch 310
 or
 
-    python evaluate.py --model 20+05+20 --epoch 310
+    python evaluate.py --model 20+05+20 --epoch 361
 
 To evaluate your trained model of a specific epoch, remember to keep the other parameters the same as training.
 
