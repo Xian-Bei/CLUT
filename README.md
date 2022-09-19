@@ -82,9 +82,10 @@ To evaluate your own trained model of a specific epoch, specify the epoch and ke
 All the visualization codes could be found in [utils/](./utils/).
 
 # Acknowledgments
-Thanks to Zeng *et al* for their excellent work.
-This repo is built on their implementation:
+This repo is built on the excellent work and implementation of Zeng *et al*:
 [Learning Image-adaptive 3D Lookup Tables for High Performance Photo Enhancement in Real-time *TPAMI2020*](https://github.com/HuiZeng/Image-Adaptive-3DLUT)
+
+Great appreciation.
 
 Hope our work helps.
 
