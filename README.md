@@ -1,12 +1,12 @@
 # Core codes for CLUT-Net and tools for 3DLUT
-[**CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement**](/demo_images/MM2022%20CLUT-Net.pdf)
+[**CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement**](/demo/MM2022%20CLUT-Net.pdf)
 
 Fengyi Zhang, [Hui Zeng](https://huizeng.github.io/), [Tianjun Zhang](https://github.com/z619850002), [Lin Zhang](https://cslinzhang.gitee.io/home/)
 
 *ACMMM2022* 
 
 ## Overview
-![](/demo_images/overview.png)
+![](/demo/overview.png)
 Framework of our proposed CLUT-Net which consists of 
 - a neural network
 - *N* basis CLUTs
@@ -67,17 +67,17 @@ To evaluate your own trained model of a specific epoch, specify the epoch and ke
 
 ## Visualization & Analysis
 - Strong correlations 
-![](demo_images/S.png)
+![](demo/S.svg)
     
 - Weak correlations 
-![](demo_images/W.png)
+![](demo/W.svg)
 
 - Learned matrices
-![](demo_images/matrix_W.png)
+![](demo/matrix_W.png)
 
 - 3D visualization of the learned basis 3DLUTs **(Left: initial identity mapping. Right: after training)**
-![](demo_images/3D.png)
-![](demo_images/3D_2.png)
+![](demo/3D.png)
+![](demo/3D_2.png)
 
 All the visualization codes could be found in [utils/](./utils/).
 

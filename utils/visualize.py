@@ -48,7 +48,7 @@ def draw_matrix_weak(matrix_weak, title=None, point_size=50, save_dir=None): # m
     
     if save_dir is not None:
         plt.pause(1)
-        plt.savefig(os.path.join(save_dir, "matrix_weak", format="pdf"))
+        plt.savefig(os.path.join(save_dir, "matrix_weak.pdf", format="pdf"))
         plt.clf()
     else:
         plt.show()
@@ -117,7 +117,7 @@ def draw_strong(luts, title=None, save_dir=None, time=1): # luts: (n,3,d,d,d)
 
     if save_dir is not None:
         plt.pause(time)
-        plt.savefig(os.path.join(save_dir, "V-in.pdf"), format="pdf")
+        plt.savefig(os.path.join(save_dir, "S.pdf"), format="pdf")
     else:
         plt.show()
 
@@ -205,7 +205,7 @@ def draw_weak(luts, title=None, time=2, point_size=40, save_dir=None): # luts: (
 
     if save_dir is not None:
         plt.pause(time)
-        plt.savefig(os.path.join(save_dir, "V-inter(%d).pdf"%point_size), format="pdf")
+        plt.savefig(os.path.join(save_dir, "W (%d).pdf"%point_size), format="pdf")
         plt.clf()
     else:
         plt.show()  
