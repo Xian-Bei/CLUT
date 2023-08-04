@@ -1,72 +1,128 @@
-import os
-import shutil
+from parameters import *
 import sys
-import math
-import numpy as np
-import pdb
-import time
-
+from os.path import join 
 import torch.nn as nn
-
-from parameter import *
 from utils.losses import *
-from setting import *
-from evaluate import evaluate
-
-
-def train(setting):
-    optimizer = setting.optimizer
-    train_dataloader = setting.train_dataloader
-    opt = setting.opt
-    best_psnr = 0
-    best_epoch = 0
-    for epoch in range(opt.epoch, opt.n_epochs+1):
-        avg_img_loss_ls = [0 for loss_name in opt.losses]
-        avg_other_loss = 0 
-        avg_psnr = 0
-        log_template = "\rE {:0>3d}/".format(epoch) + str(opt.n_epochs) + " B {:0>4d}/" + str(len(train_dataloader))
-        for i, batch in enumerate(train_dataloader):
-            optimizer.zero_grad()
-            fakes, others = setting.train(batch)
-            targets = batch["target"].type(Tensor)
-            log_str = log_template.format(i+1)
-            loss = 0
-            for loss_idx, loss_name in enumerate(opt.losses):
-                weight, loss_name = loss_name.split("*")
-                img_loss = eval(loss_name)(fakes, targets, float(weight))
-                loss += img_loss
-                avg_img_loss_ls[loss_idx] += img_loss.item()
-            other_loss = others.get("other_loss")
-            if isinstance(other_loss, torch.Tensor):
-                loss += other_loss
-                avg_other_loss += other_loss.item()
-            loss.backward()
-            optimizer.step()
-            ######################################### Log
-            avg_psnr += psnr(fakes, targets).item()
-            log_str += " psnr:{:.4f}".format(avg_psnr/(i+1))
-            for loss_idx, loss_name in enumerate(opt.losses):
-                log_str += " " + loss_name + ":%.5f"%(avg_img_loss_ls[loss_idx]/(i+1))
-            if isinstance(other_loss, torch.Tensor):
-                log_str += " other_loss:{:.5f}".format(avg_other_loss/(i+1))
-            sys.stdout.write(log_str)
-
-        ################################ eval and save
-        setting.save_ckp(None, True) # model+optimizer
-        if epoch % opt.checkpoint_interval == 0:
-            eval_psnr = evaluate(setting, epoch, best_psnr) 
-            if eval_psnr > best_psnr:
-                best_psnr = eval_psnr
-                best_epoch = epoch
-                setting.save_ckp(epoch, False)
-            log_str += " best_psnr:{:.4f} ".format(best_psnr)
-            log_str += "best_epoch:%3d" % (best_epoch)
-            with open(opt.save_logs_root+".txt", "a") as f: # save log
-                f.write(log_str)
-            sys.stdout.write(" best_psnr:{:.4f} best_epoch:{:3d} \n".format(best_psnr, best_epoch))
-        
+from test import test
+from models import *
+from datasets import *
+from torch.utils.data import DataLoader 
+from torch.optim.lr_scheduler import CosineAnnealingLR
+from ipdb import set_trace as S
 
 if __name__ == "__main__":
-    opt = parser.parse_args()
-    setting = Setting(opt)
-    train(setting)
+    hparams = parser.parse_args()
+    if hparams.name is None:
+        hparams.name = "_".join(hparams.model)
+    if 'Hash' in hparams.model[0]:
+        hparams.lr = 0.0005
+    hparams.output_dir = join(hparams.save_root, hparams.dataset, hparams.name)
+    os.makedirs(hparams.output_dir, exist_ok=True)
+    print(f"ckpt will be saved to {hparams.output_dir}")
+    hparams.save_models_root = hparams.output_dir
+    hparams.save_logs_root = hparams.output_dir
+    hparams.save_images_root = hparams.output_dir
+
+    model = eval(hparams.model[0])(*hparams.model[1:]).to(device)
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=hparams.lr,
+    )
+    if 'Hash' in hparams.model[0]:
+        scheduler = CosineAnnealingLR(optimizer, T_max=hparams.num_epochs, eta_min=hparams.lr/10, verbose=True)
+    else:
+        scheduler = None
+    train_dataloader = DataLoader(
+        eval(hparams.dataset)(hparams.data_root, split="train", model=hparams.model[0]),
+        batch_size=hparams.batch_size,
+        shuffle=True,
+        num_workers=hparams.num_workers,
+    )
+    test_dataloader = DataLoader(
+        eval(hparams.dataset)(hparams.data_root, split="test", model=hparams.model[0]),
+        batch_size=1,
+        shuffle=False,
+        num_workers=hparams.num_workers,
+    )
+    if hparams.tvmn:
+        TVMN = TVMN(hparams.model[-1], lambda_smooth=0.0001, lambda_mn=10.0).to(device)
+    else:
+        TVMN = None
+    if hparams.epoch > 1:
+        latest_ckpt = torch.load(join(hparams.save_models_root, "latest_ckpt.pth"))
+        optimizer.load_state_dict(latest_ckpt['optimizer'])
+        best_psnr = latest_ckpt['best_psnr']
+        best_epoch = latest_ckpt['best_epoch']
+        if scheduler:
+            scheduler.load_state_dict(latest_ckpt['scheduler'])
+        try:
+            model.load_state_dict(torch.load(join(hparams.save_models_root, f"model_{hparams.epoch-1}.pth")), strict=True)
+            sys.stdout.write(f"Successfully loading from {hparams.epoch-1} epoch ckpt\n")
+        except:
+            model.load_state_dict(latest_ckpt['model'], strict=True)
+            sys.stdout.write(f"Successfully loading from the latest ckpt\n")
+    else:
+        best_psnr = 0
+        best_epoch = 0
+    N = len(train_dataloader)
+    interval = N//50
+    for epoch in range(hparams.epoch, hparams.num_epochs+1):
+        model.train()
+        loss_ls = [0 for loss in hparams.losses] + [0]
+        epoch_start_time = time()
+        for i, batch in enumerate(train_dataloader):
+            optimizer.zero_grad()
+            
+            inputs = batch["input"].to(device)
+            inputs_org = batch.get("input_org").to(device)
+            targets = batch["target"].to(device)
+            # flops, params = profile(model, inputs = (inputs, inputs_org, self.TVMN))
+            results = model(inputs, inputs_org, TVMN=TVMN)
+            fakes = results["fakes"]
+            loss_ls[-1] = results.get("tvmn_loss", 0)
+            
+            
+            for loss_idx, loss_name in enumerate(hparams.losses):
+                loss_ls[loss_idx] = eval(loss_name)(fakes, targets)
+            sum(loss_ls).backward()
+            optimizer.step()
+            
+            if i % interval == 0 or i == N-1:
+                psnr_result = psnr(fakes, targets).item()
+                log_train = f"\rE {epoch:>3d}/{hparams.num_epochs:>3d} B {i+1:>4d} PSNR:{psnr_result:>0.2f}dB "
+                for loss_idx, loss_name in enumerate(hparams.losses):
+                    log_train += f"{loss_name}:{loss_ls[loss_idx].item():>0.3f} "
+                if isinstance(loss_ls[-1], torch.Tensor):
+                    log_train += f"tvmn: {loss_ls[-1].item():>0.3f} "
+                torch.cuda.synchronize()
+                cost_time = (time() - epoch_start_time)/(i+1)
+                left_time = cost_time*(N-(i+1))/60
+                sys.stdout.write(log_train + f"left={left_time:0>4.2f}m ")
+        
+        torch.cuda.synchronize()
+        cost_time = time() - epoch_start_time
+        log_test = " epoch:{:.1f}s ".format(cost_time)
+
+        eval_psnr, test_cost = test(model, test_dataloader, join(hparams.save_images_root, f"{epoch:0>4}"), best_psnr) 
+        if eval_psnr > best_psnr:
+            best_psnr = eval_psnr
+            best_epoch = epoch
+            torch.save(model.state_dict(), f"{hparams.save_models_root}/model{epoch:0>4}.pth")
+
+        log_test += f"Test:{eval_psnr:>0.2f}dB {test_cost:0>5.2f}s best:{best_psnr:.2f}dB {best_epoch:3d}. "
+        # sys.stdout.write(log_test)
+        print(log_test)
+        with open(join(hparams.save_logs_root, "log.txt"), "a") as f: # save log
+            f.write(log_train + log_test)
+        
+        ckpt = {
+            'model': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+            'best_psnr': best_psnr,
+            'best_epoch': best_epoch,
+        }
+        if scheduler is not None:
+            scheduler.step()
+            ckpt['scheduler'] = scheduler.state_dict()
+            
+        torch.save(ckpt, f"{hparams.save_models_root}/latest_ckpt.pth")

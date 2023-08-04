@@ -1,46 +1,46 @@
-import os
-import pdb
-import math
-import trilinear
-import numpy as np
 import torch.nn as nn
-import torchvision.models as models
 import torchvision.transforms as transforms
 from utils.LUT import *
-import time
+from ipdb import set_trace as S
+import tinycudann as tcnn
+from thop import profile
+import trilinear
 
+
+   
+        
+        
 class CLUTNet(nn.Module): 
-    def __init__(self, nsw, dim, *args, **kwargs):
-        super(CLUTNet, self).__init__()
+    def __init__(self, nsw, dim=33, backbone='Backbone', *args, **kwargs):
+        super().__init__()
+        self.TrilinearInterpolation = TrilinearInterpolation()
         self.pre = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        last_channel = 128
-        self.backbone = BackBone(last_channel)
-
+        self.backbone = eval(backbone)()
+        last_channel = self.backbone.last_channel
         self.classifier = nn.Sequential(
                 nn.Conv2d(last_channel, 128,1,1),
                 nn.Hardswish(inplace=True),
                 nn.Dropout(p=0.2, inplace=True),
                 nn.Conv2d(128, int(nsw[:2]),1,1),
-            )
+        )
         nsw = nsw.split("+")
         num, s, w = int(nsw[0]), int(nsw[1]), int(nsw[2])
-        self.CLUTs = CLUT(num,dim,s,w)
-        self.TrilinearInterpolation = TrilinearInterpolation()
+        self.CLUTs = CLUT(num, dim, s, w)
 
+    def fuse_basis_to_one(self, img, TVMN=None):
+        mid_results = self.backbone(self.pre(img))
+        weights = self.classifier(mid_results)[:,:,0,0] # n, num
+        D3LUT, tvmn_loss = self.CLUTs(weights, TVMN)
+        return D3LUT, tvmn_loss    
 
-    def forward(self, img, img_org, TVMN=None, *args, **kwargs):
-        feature = self.backbone(self.pre(img))
-
-        weight = self.classifier(feature)[:,:,0,0] # n, num
-        D3LUT, tvmn = self.CLUTs(weight, TVMN)
-
+    def forward(self, img, img_org, TVMN=None):
+        D3LUT, tvmn_loss = self.fuse_basis_to_one(img, TVMN)
         img_res = self.TrilinearInterpolation(D3LUT, img_org)
-
-        return img_res + img_org , {
-            "LUT": D3LUT,
-            "tvmn": tvmn,
+        return {
+            "fakes": img_res + img_org,
+            "3DLUT": D3LUT,
+            "tvmn_loss": tvmn_loss,
         }
-
 
 class CLUT(nn.Module):
     def __init__(self, num, dim=33, s="-1", w="-1", *args, **kwargs):
@@ -87,44 +87,148 @@ class CLUT(nn.Module):
 
         return D3LUTs
 
-    def combine(self, weight, TVMN): # n,num
+    def combine(self, weights, TVMN): # n,num
         dim = self.dim
         num = self.num
 
         D3LUTs = self.reconstruct_luts()
         if TVMN is None:
-            tvmn = 0
+            tvmn_loss = 0
         else:
-            tvmn = TVMN(D3LUTs)
-        D3LUT = weight.mm(D3LUTs.reshape(num,-1)).reshape(-1,3,dim,dim,dim)
-        return D3LUT, tvmn
+            tvmn_loss = TVMN(D3LUTs)
+        D3LUT = weights.mm(D3LUTs.reshape(num,-1)).reshape(-1,3,dim,dim,dim)
+        return D3LUT, tvmn_loss
 
-    def forward(self, weight, TVMN=None):
-        lut, tvmn = self.combine(weight, TVMN)
-        return lut, tvmn
+    def forward(self, weights, TVMN=None):
+        lut, tvmn_loss = self.combine(weights, TVMN)
+        return lut, tvmn_loss
 
-class BackBone(nn.Module): 
-    def __init__(self, last_channel=128, ): # org both
-        super(BackBone, self).__init__()
-        ls = [
-            *discriminator_block(3, 16, normalization=True), # 128**16
-            *discriminator_block(16, 32, normalization=True), # 64**32
-            *discriminator_block(32, 64, normalization=True), # 32**64
-            *discriminator_block(64, 128, normalization=True), # 16**128
-            *discriminator_block(128, last_channel, normalization=False), # 8**128
+
+encoding_config= {
+    "n_levels": 16,
+    "otype": "HashGrid",
+    "n_features_per_level": 2,
+    "log2_hashmap_size": 12,
+    "base_resolution": 17,
+    "max_resolution": 64,
+    "interpolation": "Linear" 
+    # "interpolation": "Smoothstep" 
+}
+network_config = {
+    "otype": "CutlassMLP",
+    "activation": "ReLU",
+    "output_activation": "None",
+    "n_neurons": 32,
+    "n_hidden_layers": 1
+}
+'''
+6 * 2^13: 6 * 8,192 = 49,152
+7 * 2^13: 7 * 8,192 = 57,344
+'''
+class HashLUT(nn.Module): 
+    def __init__(self, nt="7+13", backbone='Backbone', use_res='nores', use_mlp='mlp', min_max='9+64', *args, **kwargs):
+        super().__init__()
+
+        self.use_res = not 'no'in use_res
+        print('residule:', self.use_res)
+        self.N = encoding_config["n_levels"] = int(nt.split("+")[0])
+        T = encoding_config["log2_hashmap_size"] = int(nt.split("+")[1])
+        D_min = encoding_config["base_resolution"] = int(min_max.split("+")[0])
+        D_max = encoding_config["max_resolution"] = int(min_max.split("+")[1])
+        b = encoding_config["per_level_scale"] = np.exp(np.log(D_max/D_min)/(self.N-1))
+        print(f"{self.N} tables of range:{D_min}-{D_max}, T:{T}, b:{b:.3f}")
+        
+        self.use_mlp = not 'no' in use_mlp
+        print("mlp: ", self.use_mlp)
+        if use_mlp:
+            self.hashluts = tcnn.NetworkWithInputEncoding(n_input_dims=3, n_output_dims=self.N*3, encoding_config=encoding_config, network_config=network_config)
+        else:
+            encoding_config["n_features_per_level"] = 4
+            self.hashluts = tcnn.Encoding(n_input_dims=3, encoding_config=encoding_config)
+        
+        
+        net = eval(backbone)()
+        last_channel = net.last_channel
+        if 'Small' in backbone:
+            self.expert = nn.Sequential(
+                net,
+                nn.Flatten(),
+                nn.Dropout(p=0.2, inplace=True),
+                nn.Linear(last_channel, self.N),
+            ) 
+        else:
+            self.expert = nn.Sequential(
+                net,
+                nn.Flatten(),
+                nn.Linear(last_channel, last_channel),
+                nn.Hardswish(inplace=True),
+                nn.Dropout(p=0.2, inplace=True),
+                nn.Linear(last_channel, self.N),
+            ) 
+        print(backbone, 'backbone')
+
+
+    def forward(self, img, img_org, *args, **kwargs):
+        assert img.shape[1] == 3 and img_org.shape[-1] == 3
+        B, H, W, _ = img_org.shape # B H W C
+        mid_results = self.hashluts(img_org.reshape(-1, 3)).reshape(B, H*W, self.N, -1)[...,:3] # B, HW, N, 3            
+        weights = self.expert(img).reshape(B, 1, self.N, 1) # B, 1, N, 1
+        img_res = (mid_results * weights).sum(2).reshape(B, H, W, 3) # B, H, W, 3
+        
+        if self.use_res:
+            img_out = img_res + img_org
+        else:
+            img_out = img_res
+        return {
+            "fakes": img_out,
+        }
+        
+        
+
+
+    
+
+
+# 245,024 params
+class Backbone(nn.Module): 
+    def __init__(self): # org both
+        super().__init__()
+        self.model = nn.Sequential(
+            *CnnActNorm(3, 16, normalization=True), # 128**16
+            *CnnActNorm(16, 32, normalization=True), # 64**32
+            *CnnActNorm(32, 64, normalization=True), # 32**64
+            *CnnActNorm(64, 128, normalization=True), # 16**128
+            *CnnActNorm(128, 128, normalization=False), # 8**128
             nn.Dropout(p=0.5),
             nn.AdaptiveAvgPool2d(1),
-        ]
-        self.model = nn.Sequential(*ls)
-        
+        )
+        self.last_channel = 128
+
     def forward(self, x):
         return self.model(x)
 
-
+# 61,456 parameters
+class SmallBackbone(nn.Module): 
+    def __init__(self, last_channel=64): # org both
+        super().__init__()
+        self.model = nn.Sequential(
+            *CnnActNorm(3, 8, normalization=True), # 128**16
+            *CnnActNorm(8, 16, normalization=True), # 64**32
+            *CnnActNorm(16, 32, normalization=True), # 32**64
+            *CnnActNorm(32, 64, normalization=True), # 16**128
+            *CnnActNorm(64, 64, normalization=False), # 8**128
+            nn.Dropout(p=0.5),
+            nn.AdaptiveAvgPool2d(1),
+        )
+        self.last_channel = 64
+    
+    def forward(self, x):
+        return self.model(x)
+    
 class TVMN(nn.Module): # (n,)3,d,d,d   or   (n,)3,d
-    def __init__(self, dim=33):
+    def __init__(self, dim=33, lambda_smooth=0.0001, lambda_mn=10.0):
         super(TVMN,self).__init__()
-        self.dim = dim
+        self.dim, self.lambda_smooth, self.lambda_mn = dim, lambda_smooth, lambda_mn
         self.relu = torch.nn.ReLU()
        
         weight_r = torch.ones(1, 1, dim, dim, dim - 1, dtype=torch.float)
@@ -161,10 +265,10 @@ class TVMN(nn.Module): # (n,)3,d,d,d   or   (n,)3,d
             dif[...,(0,dim-2)] *= 2.0
             tvmn[0] = torch.mean(dif)
             tvmn[2] = 0
-        return tvmn
 
+        return self.lambda_smooth*(tvmn[0]+10*tvmn[2]) + self.lambda_mn*tvmn[1]
 
-def discriminator_block(in_filters, out_filters, kernel_size=3, sp="2_1", normalization=False):
+def CnnActNorm(in_filters, out_filters, kernel_size=3, sp="2_1", normalization=False):
     stride = int(sp.split("_")[0])
     padding = int(sp.split("_")[1])
 
@@ -177,7 +281,6 @@ def discriminator_block(in_filters, out_filters, kernel_size=3, sp="2_1", normal
 
     return layers
 
-
 class TrilinearInterpolationFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, lut, x):
@@ -189,9 +292,9 @@ class TrilinearInterpolationFunction(torch.autograd.Function):
         binsize = 1.000001 / (dim - 1)
         W = x.size(2)
         H = x.size(3)
-        batch = x.size(0)
+        B = x.size(0)
 
-        if batch == 1:
+        if B == 1:
             assert 1 == trilinear.forward(lut,
                                           x,
                                           output,
@@ -200,8 +303,8 @@ class TrilinearInterpolationFunction(torch.autograd.Function):
                                           binsize,
                                           W,
                                           H,
-                                          batch)
-        elif batch > 1:
+                                          B)
+        elif B > 1:
             output = output.permute(1, 0, 2, 3).contiguous()
             assert 1 == trilinear.forward(lut,
                                           x.permute(1,0,2,3).contiguous(),
@@ -211,10 +314,10 @@ class TrilinearInterpolationFunction(torch.autograd.Function):
                                           binsize,
                                           W,
                                           H,
-                                          batch)
+                                          B)
             output = output.permute(1, 0, 2, 3).contiguous()
 
-        int_package = torch.IntTensor([dim, shift, W, H, batch])
+        int_package = torch.IntTensor([dim, shift, W, H, B])
         float_package = torch.FloatTensor([binsize])
         variables = [lut, x, int_package, float_package]
 
@@ -225,11 +328,11 @@ class TrilinearInterpolationFunction(torch.autograd.Function):
     @staticmethod
     def backward(ctx, lut_grad, x_grad):
         lut, x, int_package, float_package = ctx.saved_variables
-        dim, shift, W, H, batch = int_package
-        dim, shift, W, H, batch = int(dim), int(shift), int(W), int(H), int(batch)
+        dim, shift, W, H, B = int_package
+        dim, shift, W, H, B = int(dim), int(shift), int(W), int(H), int(B)
         binsize = float(float_package[0])
 
-        if batch == 1:
+        if B == 1:
             assert 1 == trilinear.backward(x,
                                            x_grad,
                                            lut_grad,
@@ -238,8 +341,8 @@ class TrilinearInterpolationFunction(torch.autograd.Function):
                                            binsize,
                                            W,
                                            H,
-                                           batch)
-        elif batch > 1:
+                                           B)
+        elif B > 1:
             assert 1 == trilinear.backward(x.permute(1,0,2,3).contiguous(),
                                            x_grad.permute(1,0,2,3).contiguous(),
                                            lut_grad,
@@ -248,7 +351,7 @@ class TrilinearInterpolationFunction(torch.autograd.Function):
                                            binsize,
                                            W,
                                            H,
-                                           batch)
+                                           B)
         return lut_grad, x_grad
 
 # trilinear_need: imgs=nchw, lut=3ddd or 13ddd
@@ -260,16 +363,24 @@ class TrilinearInterpolation(torch.nn.Module):
         
         if lut.shape[0] > 1:
             if lut.shape[0] == x.shape[0]: # n,c,H,W
-                res = torch.empty_like(x)
+                use_res = torch.empty_like(x)
                 for i in range(lut.shape[0]):
-                    res[i:i+1] = TrilinearInterpolationFunction.apply(lut[i:i+1], x[i:i+1])[1]
+                    use_res[i:i+1] = TrilinearInterpolationFunction.apply(lut[i:i+1], x[i:i+1])[1]
             else:
                 n,c,h,w = x.shape
-                # pdb.set_trace()
-                res = torch.empty(n, lut.shape[0], c, h, w).cuda()
+                use_res = torch.empty(n, lut.shape[0], c, h, w).cuda()
                 for i in range(lut.shape[0]):
-                    res[:,i] = TrilinearInterpolationFunction.apply(lut[i:i+1], x)[1]
+                    use_res[:,i] = TrilinearInterpolationFunction.apply(lut[i:i+1], x)[1]
         else: # n,c,H,W
-            res = TrilinearInterpolationFunction.apply(lut, x)[1]
-        return res
+            use_res = TrilinearInterpolationFunction.apply(lut, x)[1]
+        return use_res
         # return torch.clip(TrilinearInterpolationFunction.apply(lut, x)[1],0,1)
+
+
+if __name__ == "__main__":
+    model = Backbone()
+    small_model = SmallBackbone()
+    inputs = torch.ones(1,1,3,256,256)
+    # flops, params = profile(model, inputs)
+    flops, params = profile(small_model, inputs)
+    print(flops, params)

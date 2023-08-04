@@ -21,6 +21,6 @@ def psnr(fake, expert):
         max_ = 1.
     return 10 * torch.log10(max_**2 / (mse)) 
 
-def cosine(fake, expert, weight=1):
+def cos(fake, expert, weight=1):
     return (1 - torch.nn.functional.cosine_similarity(fake, expert, 1)).mean()*weight
 

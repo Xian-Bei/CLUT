@@ -3,77 +3,28 @@ from os.path import join
 import numpy as np
 from thop import profile
 from models import *
-from parameter import cuda, Tensor, device
+from parameters import cuda, Tensor, device
 from torch.utils.data import DataLoader
 from datasets import *
 
 class Setting():
     
-    def __init__(self, opt, mode="train"):
+    def __init__(self, hparams, mode="train"):
 
-        self.opt = opt
-        opt.losses = opt.losses.split(" ")
-
-        self.model = CLUTNet(opt.model, dim=opt.dim)
-        self.model = self.model.to(device)
-        if opt.name is None:
-            opt.output_dir = join(opt.save_root, opt.dataset, opt.model)
-        else:
-            opt.output_dir = join(opt.save_root, opt.dataset, opt.name)
-        print("save checkpoints to %s" % opt.output_dir)
-
-        opt.save_models_root = opt.output_dir + "_models"
-        self.eval_dataloader = DataLoader(
-            eval(opt.dataset)(opt.data_root, mode="test"),
-            batch_size=1,
-            shuffle=False,
-            num_workers=opt.n_cpu,
-        )
-
-        if mode == "train": # python train.py
-            os.makedirs(opt.save_models_root, exist_ok=True)
-            opt.save_images_root = opt.output_dir +"_images"
-            os.makedirs(opt.save_images_root, exist_ok=True)
-            opt.save_logs_root = opt.output_dir
-            self.optimizer = torch.optim.Adam(
-                filter(lambda p: p.requires_grad, self.model.parameters()),
-                lr=opt.lr,
-            )
-            self.train_dataloader = DataLoader(
-                eval(opt.dataset)(opt.data_root, mode="train"),
-                batch_size=opt.batch_size,
-                shuffle=True,
-                num_workers=opt.n_cpu,
-            )
-            ###################################### load ckpt
-            if opt.epoch > 1:
-                self.optimizer.load_state_dict(torch.load(join(opt.save_models_root, "optimizer_latest.pth")))
-                if os.path.exists(join(opt.save_models_root, "model{:0>4}.pth".format(opt.epoch-1))):
-                    self.model.load_state_dict(torch.load(join(opt.save_models_root, "model{:0>4}.pth".format(opt.epoch-1))), strict=True)
-                    print("ckp loaded from epoch " + str(opt.epoch-1))
-                else:
-                    self.model.load_state_dict(torch.load(join(opt.save_models_root, "model_latest.pth")), strict=True)
-                    print("ckp loaded from the latest epoch")
-        else: # python eval.py
-            self.epoch = opt.epoch
-            opt.save_images_root = opt.output_dir +"_"+ str(self.epoch)
-            if opt.epoch > 1:
-                load = torch.load(join(opt.save_models_root, "model{:0>4}.pth".format(opt.epoch)))
-                self.model.load_state_dict(load, strict=True)
-                print("model loaded from epoch "+str(opt.epoch))
         
-        self.TVMN = TVMN(opt.dim).to(device)
-        os.makedirs(opt.save_images_root, exist_ok=True)
+        else: # python eval.py
+            self.epoch = hparams.epoch
+            hparams.save_images_root = hparams.output_dir +"_"+ str(self.epoch)
+            if hparams.epoch > 1:
+                load = torch.load(join(hparams.save_models_root, "model{:0>4}.pth".format(hparams.epoch)))
+                self.model.load_state_dict(load, strict=True)
+                print("model loaded from epoch "+str(hparams.epoch))
+        
+        self.
+        os.makedirs(hparams.save_images_root, exist_ok=True)
         
              
     def train(self, batch):
-        self.model.train()
-        imgs = batch["input"].type(Tensor)
-        experts = batch["target"].type(Tensor)
-        # flops, params = profile(self.model, inputs = (imgs, imgs, self.TVMN))
-        fakes, others = self.model(imgs, imgs, TVMN=self.TVMN)
-        tvmn = others.get("tvmn")
-        others["other_loss"] = self.opt.lambda_smooth*(tvmn[0]+10*tvmn[2]) + self.opt.lambda_mn*tvmn[1]
         
         return fakes, others
 
@@ -87,9 +38,9 @@ class Setting():
 
     def save_ckp(self, epoch=None, save_opt=True):
         if epoch is not None:
-            torch.save(self.model.state_dict(), "{}/model{:0>4}.pth".format(self.opt.save_models_root, epoch))
+            torch.save(self.model.state_dict(), "{}/model{:0>4}.pth".format(self.hparams.save_models_root, epoch))
         else:
-            torch.save(self.model.state_dict(), "{}/model_latest.pth".format(self.opt.save_models_root))
+            torch.save(self.model.state_dict(), "{}/model_latest.pth".format(self.hparams.save_models_root))
         if save_opt:
-            torch.save(self.optimizer.state_dict(), "{}/optimizer_latest.pth".format(self.opt.save_models_root))
+            torch.save(self.optimizer.state_dict(), "{}/optimizer_latest.pth".format(self.hparams.save_models_root))
    

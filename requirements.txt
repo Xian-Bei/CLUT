@@ -7,6 +7,7 @@ async-generator @ file:///home/ktietz/src/ci/async_generator_1611927993394/work
 attrs @ file:///tmp/build/80754af9/attrs_1620827162558/work
 backcall @ file:///home/ktietz/src/ci/backcall_1611930011877/work
 bleach @ file:///tmp/build/80754af9/bleach_1628110601003/work
+brokenaxes==0.5.0
 Brotli==1.0.9
 cachetools==5.0.0
 certifi==2021.10.8
@@ -17,6 +18,7 @@ cloudpickle @ file:///tmp/build/80754af9/cloudpickle_1632508026186/work
 colorama==0.4.4
 colormath==3.0.0
 colour-science==0.4.1
+commentjson==0.9.0
 cryptography==36.0.1
 cycler==0.10.0
 cytoolz==0.11.0
@@ -47,6 +49,7 @@ idna==3.3
 imagecodecs @ file:///tmp/build/80754af9/imagecodecs_1635529108216/work
 imageio @ file:///tmp/build/80754af9/imageio_1617700267927/work
 importlib-metadata @ file:///tmp/build/80754af9/importlib-metadata_1631916692253/work
+ipdb==0.13.9
 ipykernel @ file:///tmp/build/80754af9/ipykernel_1633534655931/work/dist/ipykernel-6.4.1-py3-none-any.whl
 ipython @ file:///tmp/build/80754af9/ipython_1635944169458/work
 ipython-genutils @ file:///tmp/build/80754af9/ipython_genutils_1606773439826/work
@@ -62,10 +65,12 @@ jupyter-console @ file:///tmp/build/80754af9/jupyter_console_1616615302928/work
 jupyter-core @ file:///tmp/build/80754af9/jupyter_core_1636537028672/work
 jupyterlab-pygments @ file:///tmp/build/80754af9/jupyterlab_pygments_1601490720602/work
 jupyterlab-widgets @ file:///tmp/build/80754af9/jupyterlab_widgets_1609884341231/work
+kaleido==0.2.1
 keras==2.8.0
 Keras-Preprocessing==1.1.2
 kiwisolver @ file:///tmp/build/80754af9/kiwisolver_1612281846643/work
 kornia==0.6.4
+lark-parser==0.7.8
 libclang==14.0.1
 lmdb==1.3.0
 locket==0.2.1
@@ -147,14 +152,18 @@ tf-estimator-nightly==2.8.0.dev2021122109
 thop==0.0.31.post2005241907
 threadpoolctl==3.0.0
 tifffile @ file:///tmp/build/80754af9/tifffile_1627275862826/work
+tinycudann==1.6
+toml==0.10.2
 toolz @ file:///tmp/build/80754af9/toolz_1636545406491/work
 torch==1.10.0+cu113
 torchaudio==0.10.0+cu113
 torchsparse @ git+https://github.com/mit-han-lab/torchsparse.git@c29cb62597bcb4cff0e2f63f006fe126e3242041
+torchsummary==1.5.1
 torchvision==0.11.1+cu113
 tornado @ file:///tmp/build/80754af9/tornado_1606942317143/work
 tqdm==4.64.0
 traitlets @ file:///tmp/build/80754af9/traitlets_1636710298902/work
+trilinear==0.0.0
 trio==0.19.0
 trio-websocket==0.9.2
 typing_extensions==4.0.0
