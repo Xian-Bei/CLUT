@@ -1,4 +1,4 @@
-# Compressed Representation of 3DLUT
+# CLUT: Compressed Representation of 3DLUT
 > Two attempts to compress 3DLUTs via learning: low-rank decomposition and hash.
 ### [**CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement**](/doc/MM2022%20CLUT-Net.pdf)
 - **Fengyi Zhang**, [Hui Zeng](https://huizeng.github.io/), [Tianjun Zhang](https://github.com/z619850002), [Lin Zhang](https://cslinzhang.gitee.io/home/)
