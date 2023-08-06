@@ -114,7 +114,7 @@ The multi-resolution HashLUTs are implemented based on the fast hash encoding of
 
 Great appreciation to the above work and all collaborators for their efforts!
 
-And hope our work helps!
+And hope our work helps! 🌟:
 
 ### BibTeX
     @inproceedings{clutnet,
