@@ -126,11 +126,9 @@ network_config = {
 7 * 2^13: 7 * 8,192 = 57,344
 '''
 class HashLUT(nn.Module): 
-    def __init__(self, nt="7+13", backbone='Backbone', use_res='nores', use_mlp='mlp', min_max='9+64', *args, **kwargs):
+    def __init__(self, nt="7+13", backbone='Backbone', use_mlp='mlp', min_max='9+64', *args, **kwargs):
         super().__init__()
 
-        self.use_res = not 'no'in use_res
-        print('residule:', self.use_res)
         self.N = encoding_config["n_levels"] = int(nt.split("+")[0])
         T = encoding_config["log2_hashmap_size"] = int(nt.split("+")[1])
         D_min = encoding_config["base_resolution"] = int(min_max.split("+")[0])
@@ -175,12 +173,8 @@ class HashLUT(nn.Module):
         weights = self.expert(img).reshape(B, 1, self.N, 1) # B, 1, N, 1
         img_res = (mid_results * weights).sum(2).reshape(B, H, W, 3) # B, H, W, 3
         
-        if self.use_res:
-            img_out = img_res + img_org
-        else:
-            img_out = img_res
         return {
-            "fakes": img_out,
+            "fakes": img_res,
         }
         
         
