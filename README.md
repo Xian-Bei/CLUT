@@ -1,6 +1,6 @@
 # CLUT: Compressed Representation of 3DLUT
 > Two attempts to compress 3DLUTs via learning: low-rank decomposition and hash.
-### [**CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement**](/doc/MM2022%20CLUT-Net.pdf)
+### [**CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement**](https://doi.org/10.1145/3503161.3547879)
 - **Fengyi Zhang**, [Hui Zeng](https://huizeng.github.io/), [Tianjun Zhang](https://github.com/z619850002), [Lin Zhang](https://cslinzhang.gitee.io/home/)
 - *ACMMM2022* 
 
@@ -15,7 +15,7 @@ The *N* basis CLUTs cover various enhancement effects required in different scen
 <!-- All three modules are jointly learned from the annotated data in an end-to-end manner. -->
 
 
-### [**Adaptively Hashing 3DLUTs for Lightweight Real-time Image Enhancement**](/doc/MM2022%20CLUT-Net.pdf)
+### [**Adaptively Hashing 3DLUTs for Lightweight Real-time Image Enhancement**](/doc/ICME23_camera_ready_eXpress.pdf)
 - **Fengyi Zhang**, [Lin Zhang](https://cslinzhang.gitee.io/home/), [Tianjun Zhang](https://github.com/z619850002), Dongqing Wang
 - *ICME2023* 
 #### ![](/doc/overview_icme.png)
