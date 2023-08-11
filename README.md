@@ -15,7 +15,7 @@ The *N* basis CLUTs cover various enhancement effects required in different scen
 <!-- All three modules are jointly learned from the annotated data in an end-to-end manner. -->
 
 
-### [**Adaptively Hashing 3DLUTs for Lightweight Real-time Image Enhancement**](/doc/ICME23_camera_ready_eXpress.pdf)
+### [**Adaptively Hashing 3DLUTs for Lightweight Real-time Image Enhancement**](/doc/23ICME_camera_ready_eXpress.pdf)
 - **Fengyi Zhang**, [Lin Zhang](https://cslinzhang.gitee.io/home/), [Tianjun Zhang](https://github.com/z619850002), Dongqing Wang
 - *ICME2023* 
 #### ![](/doc/overview_icme.png)
