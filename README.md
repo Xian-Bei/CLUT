@@ -1,10 +1,11 @@
 # CLUT: Compressed Representation of 3DLUT
-> Two attempts to compress 3DLUTs via learning: low-rank decomposition and hash.
+> Two attempts to compress 3DLUTs via learning: low-rank decomposition and hash. **Higher performance with much smaller models!** ☺️
+
 ### [**CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement**](https://doi.org/10.1145/3503161.3547879)
 - **Fengyi Zhang**, [Hui Zeng](https://huizeng.github.io/), [Tianjun Zhang](https://github.com/z619850002), [Lin Zhang](https://cslinzhang.gitee.io/home/)
 - *ACMMM2022* 
 
-#### ![](/doc/overview_mm.png)
+#### ![](doc/overview_mm.png)
 Framework of our proposed CLUT-Net which consists of 
 - A neural network
 - *N* basis CLUTs
@@ -18,7 +19,7 @@ The *N* basis CLUTs cover various enhancement effects required in different scen
 ### [**Adaptively Hashing 3DLUTs for Lightweight Real-time Image Enhancement**](/doc/23ICME_camera_ready_eXpress.pdf)
 - **Fengyi Zhang**, [Lin Zhang](https://cslinzhang.gitee.io/home/), [Tianjun Zhang](https://github.com/z619850002), Dongqing Wang
 - *ICME2023* 
-#### ![](/doc/overview_icme.png)
+#### ![](doc/overview_icme.png)
 Framework of our proposed HashLUT-based image enhancement network which contains
 - N progressive basis HashLUTs
 - A collision-compensation network
@@ -101,7 +102,7 @@ To evaluate your own trained model of a specific epoch, specify the epoch and ke
 ![](doc/3D.png)
 ![](doc/3D_2.png)
 
-- Grid occupancy
+- Grid occupancy visualization 
 ![](doc/distribution_illu.png)
 
 All the visualization codes could be found in [utils/](./utils/).
@@ -114,7 +115,9 @@ The multi-resolution HashLUTs are implemented based on the fast hash encoding of
 
 Great appreciation to the above work and all collaborators for their efforts!
 
-And hope our work helps! 🌟
+And thanks for your interest!
+
+Sincerely hope our work helps! 🌟 🔔 📌
 
 ### BibTeX
     @inproceedings{clutnet,
@@ -128,6 +131,16 @@ And hope our work helps! 🌟
     pages = {6493–6501},
     numpages = {9},
     }
+---
+    @INPROCEEDINGS{hashlut,
+    author={Zhang, Fengyi and Zhang, Lin and Zhang, Tianjun and Wang, Dongqing},
+    booktitle={2023 IEEE International Conference on Multimedia and Expo (ICME)}, 
+    title={Adaptively Hashing 3DLUTs for Lightweight Real-time Image Enhancement}, 
+    year={2023},
+    volume={},
+    number={},
+    pages={2771-2776},
+    doi={10.1109/ICME55011.2023.00471}}
 
 
     
