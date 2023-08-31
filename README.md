@@ -108,18 +108,16 @@ To evaluate your own trained model of a specific epoch, specify the epoch and ke
 All the visualization codes could be found in [utils/](./utils/).
 
 # Acknowledgments
-This repo.'s framework and the implementation of CLUTNet are built on the excellent work of Zeng *et al*:
+- This repo.'s framework and the implementation of CLUTNet are built on the excellent work of Zeng *et al*:
 [Learning Image-adaptive 3D Lookup Tables for High Performance Photo Enhancement in Real-time. *TPAMI2020*](https://github.com/HuiZeng/Image-Adaptive-3DLUT)
 
-The multi-resolution HashLUTs are implemented based on the fast hash encoding of NVIDIA [Tiny-CUDA-NN](https://github.com/NVlabs/tiny-cuda-nn). 
+- The multi-resolution HashLUTs are implemented based on the fast hash encoding of NVIDIA [Tiny-CUDA-NN](https://github.com/NVlabs/tiny-cuda-nn). 
 
-Great appreciation to the above work and all collaborators for their efforts!
+Great appreciation for the efforts of the above work and all collaborators and for your interest!
 
-And thanks for your interest!
+Sincerely hope our work helps! 🌟 🔔 
 
-Sincerely hope our work helps! 🌟 🔔 📌
-
-### BibTeX
+### BibTeX 📌
     @inproceedings{clutnet,
     author = {Zhang, Fengyi and Zeng, Hui and Zhang, Tianjun and Zhang, Lin},
     title = {CLUT-Net: Learning Adaptively Compressed Representations of 3DLUTs for Lightweight Image Enhancement},
