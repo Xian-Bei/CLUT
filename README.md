@@ -68,6 +68,7 @@ To get started as soon as possible, only modify `<data_root>` to your own path a
 
 You can train a specific model like:  
     
+    python train.py --model CLUTNet 20+-1+-1    # standard 3DLUT-based model
     python train.py --model CLUTNet 20+05+10
     python train.py --model CLUTNet 20+05+20
     python train.py --model HashLUT 7+13 
