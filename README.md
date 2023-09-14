@@ -62,7 +62,7 @@ Prepare the dataset in the following format and you could use the provided [Five
         - target_train
         - target_test
 
-Or you need to implement your own Class for your customed data format / directory arrangement.
+Or you need to implement your own Class for your customed data format or directory arrangement.
 
 ## Training
 To get started as soon as possible, only modify `<data_root>` to your own path and then:
@@ -79,7 +79,7 @@ You can train a specific model like:
 
 Refer to [parameter.py](README.md?plain=1#L14) for default settings as well as other hyper-parameters. 
 
-By default, the images, models, and logs generated during training are saved in [<save_root>/<dataset>/<name>](/FiveK/).
+By default, the images, models, and logs generated during training are saved in [<save_root>/\<dataset>/\<name>](/FiveK/).
 ## Evaluation
 We provide several pretrained models on the FiveK datset:
     
