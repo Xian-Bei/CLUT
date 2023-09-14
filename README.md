@@ -39,13 +39,16 @@ For example, compressing through decomposition would require a relatively large 
 ### Enviroment
     pip install -r requirements.txt
 
-The fast deployment of 3DLUT relies on the CUDA implementation of trilinear interpolation in [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT).
-
-To install their **trilinear** library: 
+The fast deployment of 3DLUT and CLUT relies on the CUDA implementation of trilinear interpolation in [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT).
+To install their **trilinear** library, do: 
 
     cd trilinear_cpp
     sh setup.sh
+
 > Warning: `import torch` before `import trilinear` 
+
+Currently, HashLUT is implemented based on the fast hash encoding of NVIDIA Tiny-CUDA-NN. Please refer to their [official site](https://github.com/NVlabs/tiny-cuda-nn) for compilation and PyTorch extension. (Don't be afraid cause it's gonna be really easy.) 
+
 ### Data
 - [MIT-Adobe FiveK Dataset](https://data.csail.mit.edu/graphics/fivek/) & [HDR+ Burst Photography Dataset](http://www.hdrplusdata.org/)
     - We use the setting of [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT) in our experiments, please refer to their page for details and data link.
@@ -74,7 +77,7 @@ You can train a specific model like:
     python train.py --model HashLUT 7+13 
     python train.py --model HashLUT 6+13 SmallBackbone
 
-Refer to [parameter.py](parameter.py) for default settings as well as other hyper-parameters. 
+Refer to [parameter.py](README.md?plain=1#L14) for default settings as well as other hyper-parameters. 
 
 By default, the images, models, and logs generated during training are saved in [<save_root>/<dataset>/<name>](/FiveK/).
 ## Evaluation
@@ -138,7 +141,7 @@ Sincerely hope our work helps! 🌟 🔔
     pages = {6493–6501},
     numpages = {9},
     }
----
+
     @INPROCEEDINGS{hashlut,
     author={Zhang, Fengyi and Zhang, Lin and Zhang, Tianjun and Wang, Dongqing},
     booktitle={2023 IEEE International Conference on Multimedia and Expo (ICME)}, 
