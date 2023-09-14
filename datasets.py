@@ -40,6 +40,8 @@ class FiveK(Dataset):
         self.model = model
         input_dir = join(data_root, "fiveK/input_"+split)
         target_dir = join(data_root, "fiveK/target_"+split)
+        # input_dir = join(data_root, "fiveK/bit16_AsExpertC_Zero_OrgSize")
+        # target_dir = join(data_root, "fiveK/bit8_expertC_OrgSize")
         input_files = sorted(os.listdir(input_dir))
         target_files = sorted(os.listdir(target_dir))
         self.input_files = [join(input_dir, file_name) for file_name in input_files]
@@ -51,9 +53,11 @@ class FiveK(Dataset):
         input_path = self.input_files[index]
         target_path = self.target_files[index]
         
+        input_scale = 255
+        target_scale = 255
         if 'CLUT' in self.model:
-            img_input = TF.to_tensor(cv2.cvtColor(cv2.imread(input_path, -1), cv2.COLOR_BGR2RGB)/255)
-            img_target = TF.to_tensor(cv2.cvtColor(cv2.imread(target_path, -1), cv2.COLOR_BGR2RGB)/255) 
+            img_input = TF.to_tensor(cv2.cvtColor(cv2.imread(input_path, -1), cv2.COLOR_BGR2RGB)/input_scale)
+            img_target = TF.to_tensor(cv2.cvtColor(cv2.imread(target_path, -1), cv2.COLOR_BGR2RGB)/target_scale) 
 
             if self.split == "train":
                 img_input, img_target = augment(img_input, img_target) 
@@ -75,12 +79,12 @@ class FiveK(Dataset):
             if self.split == "train":
                 img_input, img_target = augment(img_input, img_target) # low-res
                 res["input"] = TF.to_tensor(img_input)
-                res["target"]= np.array(img_target, dtype=np.float32)/255
+                res["target"]= np.array(img_target, dtype=np.float32)/target_scale
             else:
                 img_input_resize = TF.resize(img_input, (256, 256))
                 res["input"] = TF.to_tensor(img_input_resize)
-            res["input_org"] = np.array(img_input, dtype=np.float32)/255
-            res["target_org"] = np.array(img_target, dtype=np.float32)/255
+            res["input_org"] = np.array(img_input, dtype=np.float32)/input_scale
+            res["target_org"] = np.array(img_target, dtype=np.float32)/target_scale
         else:
             raise 
             
@@ -88,13 +92,6 @@ class FiveK(Dataset):
         res["name"] = img_name
         return res 
 
-    def f(self, img, mode='chw'):
-        if mode == 'hwc':
-            return np.array(img, dtype=np.float32)/255 # hwc
-        elif mode == 'chw':
-            return TF.to_tensor(img) # chw
-        else:
-            raise
     
     def __len__(self):
         return len(self.input_files)

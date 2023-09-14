@@ -16,7 +16,7 @@ The *N* basis CLUTs cover various enhancement effects required in different scen
 <!-- All three modules are jointly learned from the annotated data in an end-to-end manner. -->
 
 
-### [**Adaptively Hashing 3DLUTs for Lightweight Real-time Image Enhancement**](/doc/23ICME_camera_ready_eXpress.pdf)
+### [**Adaptively Hashing 3DLUTs for Lightweight Real-time Image Enhancement**](https://doi.org/10.1109/ICME55011.2023.00471)
 - **Fengyi Zhang**, [Lin Zhang](https://cslinzhang.gitee.io/home/), [Tianjun Zhang](https://github.com/z619850002), Dongqing Wang
 - *ICME2023* 
 #### ![](doc/overview_icme.png)
@@ -62,12 +62,20 @@ Prepare the dataset in the following format and you could use the provided [Five
 Or you need to implement your own Class for your customed data format / directory arrangement.
 
 ## Training
-The default settings of the most hyper-parameters are written in the [parameter.py](parameter.py) file.
-To get started as soon as possible (with the FiveK dataset), only the 'data_root' needs to be modified before training.
+To get started as soon as possible, only modify `<data_root>` to your own path and then:
 
-    python train.py --data_root <path>
+    python train.py --data_root <your_own_path>
 
-By default, the images, models, and logs generated during training are saved in [save_root/dataset/name](/FiveK/).
+You can train a specific model like:  
+    
+    python train.py --model CLUTNet 20+05+10
+    python train.py --model CLUTNet 20+05+20
+    python train.py --model HashLUT 7+13 
+    python train.py --model HashLUT 6+13 SmallBackbone
+
+Refer to [parameter.py](parameter.py) for default settings as well as other hyper-parameters. 
+
+By default, the images, models, and logs generated during training are saved in [<save_root>/<dataset>/<name>](/FiveK/).
 ## Evaluation
 We provide several pretrained models on the FiveK datset:
     
