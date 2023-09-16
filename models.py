@@ -126,7 +126,7 @@ network_config = {
 7 * 2^13: 7 * 8,192 = 57,344
 '''
 class HashLUT(nn.Module): 
-    def __init__(self, nt="7+13", backbone='Backbone', use_mlp='mlp', min_max='9+64', *args, **kwargs):
+    def __init__(self, nt="7+13", backbone='Backbone', compensate=True, min_max='9+64', *args, **kwargs):
         super().__init__()
 
         self.N = encoding_config["n_levels"] = int(nt.split("+")[0])
@@ -136,9 +136,8 @@ class HashLUT(nn.Module):
         b = encoding_config["per_level_scale"] = np.exp(np.log(D_max/D_min)/(self.N-1))
         print(f"{self.N} tables of range:{D_min}-{D_max}, T:{T}, b:{b:.3f}")
         
-        self.use_mlp = not 'no' in use_mlp
-        print("mlp: ", self.use_mlp)
-        if use_mlp:
+        print("compensate: ", compensate)
+        if compensate:
             self.hashluts = tcnn.NetworkWithInputEncoding(n_input_dims=3, n_output_dims=self.N*3, encoding_config=encoding_config, network_config=network_config)
         else:
             encoding_config["n_features_per_level"] = 4
